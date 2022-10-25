@@ -3,6 +3,7 @@
 #%%
 
 import random
+from ssl import enum_certificates
 import torch
 import torch.nn as nn
 import torchvision
@@ -85,7 +86,7 @@ def get_show_image(d_loader = trainload, n_show = 20):
 
 
 #%%
-#we will then start to put together a modle
+#we will then start to put together a model
 #going for simple here, so building a feed forward model utilizing
 #the sequetial module offered in pytorch
 
@@ -131,7 +132,7 @@ model.to(devicemps)
 log_int = 1000
 start_time = time.time()
 minibatch_loss, train_accuracy, pred_accuracy = [],[],[]
-best_validation, best_epoch = 0, 0
+best_validation, best_epoch = -np.inf, 0
 for epoch in range(3):
     epoch_start_time = time.time()
     model.train()
@@ -143,7 +144,15 @@ for epoch in range(3):
         loss = criterion(output, targets)
         loss.backward()
         optimizer.step()
+        minibatch_loss.append(loss.items())
     print("Batch time: {0}".format((time.time()-epoch_start_time)/60))
+
+    val_start_time = time.time()
+    model.eval()
+    for val_idx, (feats, targets)  in enumerate(valload):
+        feats, targets = feats.to(devicemps), targets.to(devicemps)
+        
+
 
 end_time = time.time()
 print("Total time: {0}".format((time.time()-start_time)/60))
