@@ -22,7 +22,7 @@ devicemps = torch.device("mps") #I believe this is "cuda" for nvidia machines
 
 #%%
 #define how to transform the images for processing
-transform = transforms.Compose([transforms.ToTensors,\
+transform = transforms.Compose([transforms.ToTensor,\
     transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))])
 #just use a really simple assumption that the mean and std dev
 #of each channel is 0.5
