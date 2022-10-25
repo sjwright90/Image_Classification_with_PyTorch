@@ -10,13 +10,15 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
 import torch.nn.functional as F
+import time
+
 #%%
 #set the device to "gpu" this script was written on a 
 # 'macOS-12.6-arm64-arm-64bit' platform with
 # torch version '1.12.1'. The code to move to gpu might be different
 #depending on your machine, or may not be available.
 
-device = torch.device("mps") #I believe this is "cuda" for nvidia machines
+devicemps = torch.device("mps") #I believe this is "cuda" for nvidia machines
 
 #%%
 #define how to transform the images for processing
@@ -64,17 +66,47 @@ class CIFARNet(nn.Module):
             nn.BatchNorm2d(64),
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
             nn.ReLU(inplace = True),
-            nn.MaxPool2d(kernel_size = 2, stride = 2)
+            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.BatchNorm2d(128)
         )
-        self.avgpool = nn.AdaptiveAvgPool2d((6,6))
+        self.avgpool = nn.AdaptiveAvgPool2d((6,6)) # out: 128 x 6 x 6
         self.linear = nn.Sequential(
-
+            nn.Dropout(),
+            nn.Linear(128*6*6, 1024),
+            nn.ReLU(inplace = True),
+            nn.Dropout(),
+            nn.Linear(1024, 1024),
+            nn.ReLU(inplace = True),
+            nn.Linear(1024,n_classes)            
         )
-
-        
-            
-            
-        
-        
-
+    def forward(self, x):
+        x = self.convo(x)
+        x = self.avgpool(x)
+        x = x.view(-1, 128 * 6 * 6)
+        x = self.linear(x)
+#%%
+#set up hyperparameters and optimizer
+model = CIFARNet()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr = 3e-3)
+model.to(devicemps)
+#%%
+log_int = 1000
+start_time = time.time()
+minibatch_loss, train_accuracy, pred_accuracy = [],[],[]
+best_validation, best_epoch = 0
+for epoch in range(3):
+    epoch_start_time = time.time()
+    model.train()
+    for batch_idx, (feats, targets) in enumerate(trainload):
+        feats = feats.to(devicemps)
+        targets = targets.to(devicemps)
+        optimizer.zero_grad()
+        output = model(feats)
+        loss = criterion(output, targets)
+        loss.backward()
+        optimizer.step()
+    print("Batch time: {0}".format((time.time()-epoch_start_time)/60))
+end_time = time.time()
+print("Total time: {0}".format((time.time()-start_time)/60))
 #%%
