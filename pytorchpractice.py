@@ -1,28 +1,34 @@
 
 
 #%%
-from re import M
+
+import random
 import torch
 import torch.nn as nn
 import torchvision
 import torch.utils.data
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
 import torchvision.transforms as transforms
 import torch.optim as optim
 import torch.nn.functional as F
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 #%%
 #set the device to "gpu" this script was written on a 
-# 'macOS-12.6-arm64-arm-64bit' platform with
-# torch version '1.12.1'. The code to move to gpu might be different
+#'macOS-12.6-arm64-arm-64bit' platform with
+#torch version '1.12.1'. The code to move to gpu might be different
 #depending on your machine, or may not be available.
+#python version 3.10.6
 
-devicemps = torch.device("mps") #I believe this is "cuda" for nvidia machines
+devicemps = torch.device("mps")
+#I believe this is "cuda" for nvidia machines
 
 #%%
 #define how to transform the images for processing
-transform = transforms.Compose([transforms.ToTensor,\
+transform = transforms.Compose([transforms.ToTensor(),\
     transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))])
 #just use a really simple assumption that the mean and std dev
 #of each channel is 0.5
@@ -34,18 +40,49 @@ cifartrain = torchvision.datasets.CIFAR10(root = "./data",\
     train = True, download = True, transform = transform)
 cifartest = torchvision.datasets.CIFAR10(root = "./data",\
     train = False, download=True, transform = transform)
+
 #and make a list of the images in the dataset
-classes = ("airplane", "auto", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck")
+classes = cifartrain.classes
 #%%
 #then we build the data loaders to get the data 
 #into the pytorch model
-
+#we will manually build a k-fold CV from the training set
+#so no just put 
+indxs = np.arange(len(cifartrain))
+np.random.shuffle(indxs)
+split = int(np.floor(len(cifartrain) * 0.1)) #10% set aside for validation
+train_idx, val_idx = indxs[split:], indxs[:split]
+train_sampler = SubsetRandomSampler(train_idx)
+valid_sampler = SubsetRandomSampler(val_idx)
+#%%
 trainload = DataLoader(cifartrain, batch_size = 128,\
-    shuffle = True, num_workers=4)
+    sampler=train_sampler, num_workers=0, pin_memory=True)
+
+valload = DataLoader(cifartrain, batch_size = 128,\
+    sampler=valid_sampler, num_workers=0, pin_memory=True)
+
 testloader = DataLoader(cifartest, batch_size = 128,\
-    shuffle = False, num_workers=4)
-#load in 128 at a time, shuffle the training set, but not
-#the testing set
+    num_workers=0, pin_memory=True)
+
+
+#load in 128 at a time
+#workers set to 0 because it freezes otherwise and I cannot figure out why
+#%%
+#plot some of the images
+def showimg(img):
+    img = img/2 + 0.5
+    plt.imshow(np.transpose(img, (1,2,0)))
+def get_show_image(d_loader = trainload, n_show = 20):
+    set_row = n_show//10 if n_show%10 == 0 else n_show//10 + 1
+    diter = iter(d_loader)
+    images, label = diter.next()
+    images = images.numpy()
+    fig = plt.figure(figsize=(25,4))
+    for idx in np.arange(n_show):
+        ax = fig.add_subplot(set_row, 10, idx + 1, xticks = [], yticks = [])
+        showimg(images[idx])
+        ax.set_title(classes[label[idx]])
+
 
 #%%
 #we will then start to put together a modle
@@ -54,19 +91,19 @@ testloader = DataLoader(cifartest, batch_size = 128,\
 
 class CIFARNet(nn.Module):
     def __init__(self, n_classes = 10): #make it somewhat reusable by allowing user to define n_classes
-        super(CIFARNet, self).__init()
+        super(CIFARNet, self).__init__()
         self.convo = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(inplace = True),
-            nn.Conv2d(in_channels=16, out_channel = 32, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=16, out_channels = 32, kernel_size=3, padding=1),
             nn.ReLU(inplace = True),
-            nn.MaxPool2d(kernel_size=2, stride = 2),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2, stride = 2), #size 32 x 16 x 16
+            nn.Conv2d(in_channels=32, out_channels = 64, kernel_size=3, padding=1),
             nn.ReLU(inplace = True),
             nn.BatchNorm2d(64),
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=64, out_channels = 128, kernel_size=3, padding=1),
             nn.ReLU(inplace = True),
-            nn.MaxPool2d(kernel_size = 2, stride = 2),
+            nn.MaxPool2d(kernel_size = 2, stride = 2), #size 128 x 8 x 8
             nn.BatchNorm2d(128)
         )
         self.avgpool = nn.AdaptiveAvgPool2d((6,6)) # out: 128 x 6 x 6
@@ -88,13 +125,13 @@ class CIFARNet(nn.Module):
 #set up hyperparameters and optimizer
 model = CIFARNet()
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr = 3e-3)
+optimizer = optim.Adam(model.parameters(), lr = 3e-3, weight_decay=0.0001)
 model.to(devicemps)
 #%%
 log_int = 1000
 start_time = time.time()
 minibatch_loss, train_accuracy, pred_accuracy = [],[],[]
-best_validation, best_epoch = 0
+best_validation, best_epoch = 0, 0
 for epoch in range(3):
     epoch_start_time = time.time()
     model.train()
@@ -107,6 +144,7 @@ for epoch in range(3):
         loss.backward()
         optimizer.step()
     print("Batch time: {0}".format((time.time()-epoch_start_time)/60))
+
 end_time = time.time()
 print("Total time: {0}".format((time.time()-start_time)/60))
 #%%
