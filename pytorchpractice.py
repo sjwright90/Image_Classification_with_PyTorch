@@ -23,8 +23,10 @@ import matplotlib.pyplot as plt
 #torch version '1.12.1'. The code to move to gpu might be different
 #depending on your machine, or may not be available.
 #python version 3.10.6
+mps_on = torch.has_mps
 
-devicemps = torch.device("mps")
+if mps_on:
+    devicemps = torch.device("mps")
 #I believe this is "cuda" for nvidia machines
 
 #%%
@@ -127,7 +129,7 @@ class CIFARNet(nn.Module):
 model = CIFARNet()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr = 3e-3, weight_decay=0.0001)
-model.to(devicemps)
+if mps_on: model.to(devicemps)
 #%%
 log_int = 1000
 start_time = time.time()
@@ -137,8 +139,9 @@ for epoch in range(3):
     epoch_start_time = time.time()
     model.train()
     for batch_idx, (feats, targets) in enumerate(trainload):
-        feats = feats.to(devicemps)
-        targets = targets.to(devicemps)
+        if mps_on: 
+            feats = feats.to(devicemps)
+            targets = targets.to(devicemps)
         optimizer.zero_grad()
         output = model(feats)
         loss = criterion(output, targets)
@@ -150,8 +153,10 @@ for epoch in range(3):
     val_start_time = time.time()
     model.eval()
     for val_idx, (feats, targets)  in enumerate(valload):
-        feats, targets = feats.to(devicemps), targets.to(devicemps)
-        
+        if mps_on:
+            feats, targets = feats.to(devicemps), targets.to(devicemps)
+        output = model(feats)
+
 
 
 end_time = time.time()
