@@ -129,7 +129,10 @@ class CIFARNet(nn.Module):
             nn.Conv2d(in_channels=64, out_channels = 128, kernel_size=3, padding=1),
             nn.ReLU(inplace = True),
             nn.MaxPool2d(kernel_size = 2, stride = 2), #size 128 x 8 x 8
-            nn.BatchNorm2d(128)
+            nn.BatchNorm2d(128),
+            nn.Conv2d(in_channels = 128, out_channels = 256, kernel_size = 3, padding = 1), #size 256 x 8 x 8
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(256)
         )
         self.avgpool = nn.AdaptiveAvgPool2d((6,6)) # out: 128 x 6 x 6
         self.linear = nn.Sequential(
