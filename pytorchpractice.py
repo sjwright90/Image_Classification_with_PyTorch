@@ -251,7 +251,7 @@ for e in range(n_epochs):
         textcoords="offset points")
     line_loc += epoch_brk
 plt.show()
-plt.savefig("nnmodel_accuracy.png")
+figa.savefig("nnmodel_accuracy.png")
 #%%
 #predict on new data, just one batch, 128 images, take 3rd iteration
 i = 0
@@ -275,5 +275,5 @@ for idx in np.arange(20):
     ax = figp.add_subplot(2, 10, idx+1, xticks = [], yticks = [])
     showimg(imgs[idx])
     ax.set_title("Predicted: " + classes[pred[idx]] + "\nActual: " + classes[actuals[idx]])
-plt.savefig("test_images_pred_actual.png")
+figp.savefig("test_images_pred_actual.png")
 #%%
