@@ -2,6 +2,7 @@
 
 #%%
 
+from turtle import color
 import torch
 import torch.nn as nn
 import torchvision
@@ -172,7 +173,8 @@ start_time = time.time()
 train_epoch_loss, val_epoch_loss, train_accuracy, pred_accuracy = [],[],[],[]
 epoch_val_acc, epoch_train_acc = [],[]
 best_val_loss, best_epoch = np.inf, 0
-for epoch in range(10):
+n_epochs = 10
+for epoch in range(n_epochs):
     epoch_start_time = time.time()
     model.train()
     train_loss = []
@@ -225,16 +227,29 @@ ax.set_title("Training loss and validation loss")
 ax.legend(["Training", "Validation"])
 ax.set_xlabel("Epoch")
 ax.set_ylabel("Loss")
+ymin,ymax = plt.ylim()
+ax.axvline(x = best_epoch, color = 'k')
+ax.annotate("Lowest validation loss", xy = (best_epoch,ymax/2),\
+    textcoords='offset points')
 plt.show()
 fig.savefig("nnmodel_loss.png")
 #%%
 figa, axa = plt.subplots()
 axa.plot(train_accuracy)
 #axa.plot(pred_accuracy)
-axa.set_title("Training and validation accuracy")
+axa.set_title("Training accuracy for each batch")
 axa.legend(["Training", "Validation"])
-axa.set_xlabel("Epoch")
+axa.set_xlabel("Batch")
 axa.set_ylabel("Accuracy")
+_,ymax = plt.ylim()
+_,xmax = plt.xlim()
+epoch_brk = len(train_accuracy)/n_epochs
+line_loc = 0
+for e in range(n_epochs):
+    axa.axvline(x = line_loc, color = "k")
+    axa.annotate("E{}".format(e + 1), xy = (7+ line_loc/11.75,ymax/4),\
+        textcoords="offset points")
+    line_loc += epoch_brk
 plt.show()
 plt.savefig("nnmodel_accuracy.png")
 #%%
@@ -251,7 +266,7 @@ for test_idx, (feats, targets) in enumerate(testloader):
     actuals = targets
     imgs = feats.cpu().numpy()
     i += 1
-    if i >2:
+    if i > 1:
         break
 #%%
 #plot test images labeled by predicted class and actual class
