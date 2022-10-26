@@ -112,6 +112,7 @@ def get_show_image(d_loader = trainload, n_show = 20):
 #we will then start to put together a model
 #going for simple here, so building a feed forward model utilizing
 #the sequetial module offered in pytorch
+#model is loosely based on AlexNET
 
 class CIFARNet(nn.Module):
     def __init__(self, n_classes = 10): #make it somewhat reusable by allowing user to define n_classes
