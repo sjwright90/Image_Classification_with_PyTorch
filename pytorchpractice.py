@@ -158,7 +158,7 @@ for images, labels in trainload:
 start_time = time.time()
 batch_loss, train_accuracy, pred_accuracy = [],[],[]
 best_val_acc, best_epoch = -np.inf, 0
-for epoch in range(3):
+for epoch in range(10):
     epoch_start_time = time.time()
     model.train()
     for batch_idx, (feats, targets) in enumerate(trainload):
@@ -172,7 +172,7 @@ for epoch in range(3):
         train_accuracy.append(accuracy(output, targets))
         loss.backward()
         optimizer.step()
-    print("Batch time: {0}".format((time.time()-epoch_start_time)/60))
+    print("Batch time: {:.3f} minutes".format((time.time()-epoch_start_time)/60))
 
     val_start_time = time.time()
     model.eval()
@@ -181,10 +181,12 @@ for epoch in range(3):
             feats, targets = feats.to(devicemps), targets.to(devicemps)
         output = model(feats)
         loss = criterion(output, targets)
-        pred_accuracy.append(accuracy(output, targets))
-    print("Validation runtime: {}".format((time.time()-val_start_time)/60))
+        temp = accuracy(output, targets)
+        pred_accuracy.append(temp)
+        if temp > best_val_acc:
+            best_val_acc = temp
+            best_epoch = epoch
+    print("Validation runtime: {:.3f} minutes".format((time.time()-val_start_time)/60))
 
-
-end_time = time.time()
-print("Total time: {0}".format((time.time()-start_time)/60))
+print("Total time: {:.3f} minutes".format((time.time()-start_time)/60))
 #%%
