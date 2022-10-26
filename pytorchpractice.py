@@ -70,6 +70,10 @@ testloader = DataLoader(cifartest, batch_size = 128,\
 
 #load in 128 at a time
 #workers set to 0 because it freezes otherwise and I cannot figure out why
+
+#%%
+
+
 #%%
 #plot some of the images
 def showimg(img):
@@ -124,12 +128,23 @@ class CIFARNet(nn.Module):
         x = self.avgpool(x)
         x = x.view(-1, 128 * 6 * 6)
         x = self.linear(x)
+        return x
 #%%
 #set up hyperparameters and optimizer
 model = CIFARNet()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr = 3e-3, weight_decay=0.0001)
 if mps_on: model.to(devicemps)
+#%%
+for images, labels in trainload:
+    if mps_on: 
+            images = images.to(devicemps)
+            labels = labels.to(devicemps)
+    print("images.shape", images.shape)
+    out = model(images)
+    print("out.shape", out.shape)
+    print("out[0]", out[0])
+    break
 #%%
 log_int = 1000
 start_time = time.time()
