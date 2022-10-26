@@ -225,11 +225,21 @@ for test_idx, (feats, targets) in enumerate(testloader):
     testout = model(feats)
     test_acc = accuracy(testout, targets)
     _, pred = torch.max(testout, dim=1)
-    pred_labs = pred.item()
-    actuals = targets.item()
+    pred = pred.cpu().numpy()
+    actuals = targets.cpu().numpy()
     break
-    
-
-
-
 #%%
+actuals_names = [classes[actuals[x]] for x in actuals]
+pred_names = [classes[pred[x]] for x in pred]    
+#%%
+
+def get_show_image(d_loader = trainload, n_show = 20):
+    set_row = n_show//10 if n_show%10 == 0 else n_show//10 + 1
+    diter = iter(d_loader)
+    images, label = diter.next()
+    images = images.numpy()
+    fig = plt.figure(figsize=(25,4))
+    for idx in np.arange(n_show):
+        ax = fig.add_subplot(set_row, 10, idx + 1, xticks = [], yticks = [])
+        showimg(images[idx])
+        ax.set_title(classes[label[idx]])
