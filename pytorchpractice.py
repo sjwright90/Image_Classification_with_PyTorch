@@ -168,7 +168,7 @@ for images, labels in trainload:
 start_time = time.time()
 train_epoch_loss, val_epoch_loss, train_accuracy, pred_accuracy = [],[],[],[]
 epoch_val_acc, epoch_train_acc = [],[]
-best_val_acc, best_epoch = -np.inf, 0
+best_val_loss, best_epoch = np.inf, 0
 for epoch in range(6):
     epoch_start_time = time.time()
     model.train()
@@ -199,12 +199,18 @@ for epoch in range(6):
         val_loss.append(loss)
         temp = accuracy(output, targets)
         pred_accuracy.append(temp)
-        if temp > best_val_acc:
-            best_val_acc = temp
-            best_epoch = epoch
+        
+
     print("Epoch: {} validation runtime: {:.3f} minutes".format(epoch + 1,(time.time()-val_start_time)/60))
     epoch_val_acc.append(torch.stack(pred_accuracy).mean().item())
     val_epoch_loss.append(torch.stack(val_loss).mean().item())
+    if val_epoch_loss[-1] < best_val_loss:
+        best_val_loss = val_epoch_loss[-1]
+        best_epoch = epoch
+        torch.save(model.state_dict(), "nnmodel_cifar10.pt")
+
+    
+
 
 print("Total time: {:.3f} minutes".format((time.time()-start_time)/60))
 #%%
