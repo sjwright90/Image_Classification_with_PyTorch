@@ -157,6 +157,7 @@ for images, labels in trainload:
 #%%
 start_time = time.time()
 batch_loss, train_accuracy, pred_accuracy = [],[],[]
+batch_train_acc, batch_val_acc = [],[]
 best_val_acc, best_epoch = -np.inf, 0
 for epoch in range(10):
     epoch_start_time = time.time()
@@ -173,6 +174,7 @@ for epoch in range(10):
         loss.backward()
         optimizer.step()
     print("Batch time: {:.3f} minutes".format((time.time()-epoch_start_time)/60))
+    batch_train_acc.append(torch.stack(train_accuracy).mean().item())
 
     val_start_time = time.time()
     model.eval()
@@ -187,6 +189,7 @@ for epoch in range(10):
             best_val_acc = temp
             best_epoch = epoch
     print("Validation runtime: {:.3f} minutes".format((time.time()-val_start_time)/60))
+    batch_val_acc.append(torch.stack(pred_accuracy).mean().item())
 
 print("Total time: {:.3f} minutes".format((time.time()-start_time)/60))
 #%%
