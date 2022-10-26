@@ -2,6 +2,7 @@
 
 #%%
 
+from itertools import accumulate
 import random
 from ssl import enum_certificates
 import torch
@@ -28,6 +29,12 @@ mps_on = torch.has_mps
 if mps_on:
     devicemps = torch.device("mps")
 #I believe this is "cuda" for nvidia machines
+#%%
+#define accuracy function
+
+def accuracy(outputs, labels):
+    _, pred = torch.max(outputs, dim=1)
+    return torch.tensor(torch.sum(pred == labels).item()/len(pred))
 
 #%%
 #define how to transform the images for processing
@@ -70,6 +77,7 @@ testloader = DataLoader(cifartest, batch_size = 128,\
 
 #load in 128 at a time
 #workers set to 0 because it freezes otherwise and I cannot figure out why
+#seems to be a unique problem to mps GPU usage
 
 #%%
 
@@ -136,6 +144,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr = 3e-3, weight_decay=0.0001)
 if mps_on: model.to(devicemps)
 #%%
+"""make sure the model is outputting the expected results"""
 for images, labels in trainload:
     if mps_on: 
             images = images.to(devicemps)
@@ -146,10 +155,9 @@ for images, labels in trainload:
     print("out[0]", out[0])
     break
 #%%
-log_int = 1000
 start_time = time.time()
-minibatch_loss, train_accuracy, pred_accuracy = [],[],[]
-best_validation, best_epoch = -np.inf, 0
+batch_loss, train_accuracy, pred_accuracy = [],[],[]
+best_val_acc, best_epoch = -np.inf, 0
 for epoch in range(3):
     epoch_start_time = time.time()
     model.train()
@@ -160,9 +168,10 @@ for epoch in range(3):
         optimizer.zero_grad()
         output = model(feats)
         loss = criterion(output, targets)
+        batch_loss.append(loss)
+        train_accuracy.append(accuracy(output, targets))
         loss.backward()
         optimizer.step()
-        minibatch_loss.append(loss.items())
     print("Batch time: {0}".format((time.time()-epoch_start_time)/60))
 
     val_start_time = time.time()
@@ -171,7 +180,9 @@ for epoch in range(3):
         if mps_on:
             feats, targets = feats.to(devicemps), targets.to(devicemps)
         output = model(feats)
-
+        loss = criterion(output, targets)
+        pred_accuracy.append(accuracy(output, targets))
+    print("Validation runtime: {}".format((time.time()-val_start_time)/60))
 
 
 end_time = time.time()
