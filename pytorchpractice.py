@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 import torchvision.transforms as transforms
 import torch.optim as optim
+import torch.nn.functional as F
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -133,10 +134,10 @@ class CIFARNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.BatchNorm2d(256)
         )
-        self.avgpool = nn.AdaptiveAvgPool2d((6,6)) # out: 128 x 6 x 6
+        self.avgpool = nn.AdaptiveAvgPool2d((6,6)) # out: 256 x 6 x 6
         self.linear = nn.Sequential(
             nn.Dropout(),
-            nn.Linear(128*6*6, 1024),
+            nn.Linear(256*6*6, 1024),
             nn.ReLU(inplace = True),
             nn.Dropout(),
             nn.Linear(1024, 1024),
@@ -146,7 +147,7 @@ class CIFARNet(nn.Module):
     def forward(self, x):
         x = self.convo(x)
         x = self.avgpool(x)
-        x = x.view(-1, 128 * 6 * 6)
+        x = x.view(-1, 256 * 6 * 6)
         x = self.linear(x)
         return x
 #%%
@@ -171,7 +172,7 @@ start_time = time.time()
 train_epoch_loss, val_epoch_loss, train_accuracy, pred_accuracy = [],[],[],[]
 epoch_val_acc, epoch_train_acc = [],[]
 best_val_loss, best_epoch = np.inf, 0
-for epoch in range(6):
+for epoch in range(10):
     epoch_start_time = time.time()
     model.train()
     train_loss = []
