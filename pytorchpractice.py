@@ -156,12 +156,13 @@ for images, labels in trainload:
     break
 #%%
 start_time = time.time()
-batch_loss, train_accuracy, pred_accuracy = [],[],[]
-batch_train_acc, batch_val_acc = [],[]
+train_epoch_loss, val_epoch_loss, train_accuracy, pred_accuracy = [],[],[],[]
+epoch_val_acc, epoch_train_acc = [],[]
 best_val_acc, best_epoch = -np.inf, 0
-for epoch in range(10):
+for epoch in range(4):
     epoch_start_time = time.time()
     model.train()
+    train_loss = []
     for batch_idx, (feats, targets) in enumerate(trainload):
         if mps_on: 
             feats = feats.to(devicemps)
@@ -169,27 +170,66 @@ for epoch in range(10):
         optimizer.zero_grad()
         output = model(feats)
         loss = criterion(output, targets)
-        batch_loss.append(loss)
+        train_loss.append(loss)
         train_accuracy.append(accuracy(output, targets))
         loss.backward()
         optimizer.step()
-    print("Batch time: {:.3f} minutes".format((time.time()-epoch_start_time)/60))
-    batch_train_acc.append(torch.stack(train_accuracy).mean().item())
+    print("Epoch: {} train runtime: {:.3f} minutes".format(epoch,(time.time()-epoch_start_time)/60))
+    epoch_train_acc.append(torch.stack(train_accuracy).mean().item())
+    train_epoch_loss.append(torch.stack(train_loss).mean().item())
 
     val_start_time = time.time()
     model.eval()
+    val_loss = []
     for val_idx, (feats, targets)  in enumerate(valload):
         if mps_on:
             feats, targets = feats.to(devicemps), targets.to(devicemps)
         output = model(feats)
         loss = criterion(output, targets)
+        val_loss.append(loss)
         temp = accuracy(output, targets)
         pred_accuracy.append(temp)
         if temp > best_val_acc:
             best_val_acc = temp
             best_epoch = epoch
-    print("Validation runtime: {:.3f} minutes".format((time.time()-val_start_time)/60))
-    batch_val_acc.append(torch.stack(pred_accuracy).mean().item())
+    print("Epoch: {} validation runtime: {:.3f} minutes".format(epoch,(time.time()-val_start_time)/60))
+    epoch_val_acc.append(torch.stack(pred_accuracy).mean().item())
+    val_epoch_loss.append(torch.stack(val_loss).mean().item())
 
 print("Total time: {:.3f} minutes".format((time.time()-start_time)/60))
+#%%
+#plot training and validation epoch 
+figs, ax = plt.subplots()
+ax.plot(train_epoch_loss, "-bx")
+ax.plot(val_epoch_loss, "-rx")
+ax.set_title("Training loss and validation loss")
+ax.legend(["Training", "Validation"])
+ax.set_xlabel("Epoch")
+ax.set_ylabel("Loss")
+plt.show()
+#%%
+figa, axa = plt.subplots()
+axa.plot(train_accuracy)
+axa.plot(pred_accuracy)
+axa.set_title("Training and validation accuracy")
+axa.legend(["Training", "Validation"])
+axa.set_xlabel("Epoch")
+axa.set_ylabel("Accuracy")
+plt.show()
+#%%
+#predict on new data, just one batch, 128 images
+for test_idx, (feats, targets) in enumerate(testloader):
+    model.eval()
+    if mps_on:
+            feats, targets = feats.to(devicemps), targets.to(devicemps)
+    testout = model(feats)
+    test_acc = accuracy(testout, targets)
+    _, pred = torch.max(testout, dim=1)
+    pred_labs = pred.item()
+    actuals = targets.item()
+    break
+    
+
+
+
 #%%
