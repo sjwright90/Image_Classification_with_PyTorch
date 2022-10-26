@@ -52,8 +52,7 @@ print(mean_red,mean_green, mean_blue)
 #define how to transform the images for processing
 transform = transforms.Compose([transforms.ToTensor(),\
     transforms.Normalize((mean_red,mean_green,mean_blue), (std_red,std_green,std_blue))])
-#just use a really simple assumption that the mean and std dev
-#of each channel is 0.5
+
 
 #then we pull the training and test sets in
 #using the cifar10 dataset, we will store in in a local
@@ -90,8 +89,6 @@ testloader = DataLoader(cifartest, batch_size = 128,\
 #load in 128 at a time
 #workers set to 0 because it freezes otherwise and I cannot figure out why
 #seems to be a unique problem to mps GPU usage
-
-#%%
 
 
 #%%
@@ -171,7 +168,7 @@ start_time = time.time()
 train_epoch_loss, val_epoch_loss, train_accuracy, pred_accuracy = [],[],[],[]
 epoch_val_acc, epoch_train_acc = [],[]
 best_val_acc, best_epoch = -np.inf, 0
-for epoch in range(4):
+for epoch in range(6):
     epoch_start_time = time.time()
     model.train()
     train_loss = []
@@ -186,7 +183,7 @@ for epoch in range(4):
         train_accuracy.append(accuracy(output, targets))
         loss.backward()
         optimizer.step()
-    print("Epoch: {} train runtime: {:.3f} minutes".format(epoch,(time.time()-epoch_start_time)/60))
+    print("Epoch: {} train runtime: {:.3f} minutes".format(epoch + 1,(time.time()-epoch_start_time)/60))
     epoch_train_acc.append(torch.stack(train_accuracy).mean().item())
     train_epoch_loss.append(torch.stack(train_loss).mean().item())
 
@@ -204,7 +201,7 @@ for epoch in range(4):
         if temp > best_val_acc:
             best_val_acc = temp
             best_epoch = epoch
-    print("Epoch: {} validation runtime: {:.3f} minutes".format(epoch,(time.time()-val_start_time)/60))
+    print("Epoch: {} validation runtime: {:.3f} minutes".format(epoch + 1,(time.time()-val_start_time)/60))
     epoch_val_acc.append(torch.stack(pred_accuracy).mean().item())
     val_epoch_loss.append(torch.stack(val_loss).mean().item())
 
@@ -222,14 +219,15 @@ plt.show()
 #%%
 figa, axa = plt.subplots()
 axa.plot(train_accuracy)
-axa.plot(pred_accuracy)
+#axa.plot(pred_accuracy)
 axa.set_title("Training and validation accuracy")
 axa.legend(["Training", "Validation"])
 axa.set_xlabel("Epoch")
 axa.set_ylabel("Accuracy")
 plt.show()
 #%%
-#predict on new data, just one batch, 128 images
+#predict on new data, just one batch, 128 images, take 3rd iteration
+i = 0
 for test_idx, (feats, targets) in enumerate(testloader):
     model.eval()
     if mps_on:
@@ -237,23 +235,17 @@ for test_idx, (feats, targets) in enumerate(testloader):
     testout = model(feats)
     test_acc = accuracy(testout, targets)
     _, pred = torch.max(testout, dim=1)
-    pred = pred.cpu().numpy()
-    actuals = targets.cpu().numpy()
-    break
+    pred = pred
+    actuals = targets
+    imgs = feats.cpu().numpy()
+    i += 1
+    if i >2:
+        break
 #%%
-actuals_names = [classes[actuals[x]] for x in actuals]
-pred_names = [classes[pred[x]] for x in pred]    
+#plot test images labeled by predicted class and actual class
+fig = plt.figure(figsize=(25,6))
+for idx in np.arange(20):
+    ax = fig.add_subplot(2, 10, idx+1, xticks = [], yticks = [])
+    showimg(imgs[idx])
+    ax.set_title("Predicted: " + classes[pred[idx]] + "\nActual: " + classes[actuals[idx]])
 #%%
-'''
-def get_show_image(d_loader = trainload, n_show = 20):
-    set_row = n_show//10 if n_show%10 == 0 else n_show//10 + 1
-    diter = iter(d_loader)
-    images, label = diter.next()
-    images = images.numpy()
-    fig = plt.figure(figsize=(25,4))
-    for idx in np.arange(n_show):
-        ax = fig.add_subplot(set_row, 10, idx + 1, xticks = [], yticks = [])
-        showimg(images[idx])
-        ax.set_title(classes[label[idx]])
-DOWN HERE FOR PLOTTING LATER
-'''
