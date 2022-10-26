@@ -2,9 +2,6 @@
 
 #%%
 
-from itertools import accumulate
-import random
-from ssl import enum_certificates
 import torch
 import torch.nn as nn
 import torchvision
@@ -36,10 +33,25 @@ def accuracy(outputs, labels):
     _, pred = torch.max(outputs, dim=1)
     return torch.tensor(torch.sum(pred == labels).item()/len(pred))
 
+
+#%%
+#estimate mean and standard deviation of images from test data
+cifartraingetmean = torchvision.datasets.CIFAR10(root = "./data",\
+    train = False, download=True, transform=transforms.ToTensor())
+imgs = [item[0] for item in cifartraingetmean]
+imgs = torch.stack(imgs, dim = 0).numpy()
+mean_red = imgs[:,0,:,:].mean()
+std_red = imgs[:,0,:,:].std()
+mean_green = imgs[:,1,:,:].mean()
+std_green = imgs[:,1,:,:].std()
+mean_blue = imgs[:,2,:,:].mean()
+std_blue = imgs[:,2,:,:].std()
+print(mean_red,mean_green, mean_blue)
+
 #%%
 #define how to transform the images for processing
 transform = transforms.Compose([transforms.ToTensor(),\
-    transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))])
+    transforms.Normalize((mean_red,mean_green,mean_blue), (std_red,std_green,std_blue))])
 #just use a really simple assumption that the mean and std dev
 #of each channel is 0.5
 
@@ -232,7 +244,7 @@ for test_idx, (feats, targets) in enumerate(testloader):
 actuals_names = [classes[actuals[x]] for x in actuals]
 pred_names = [classes[pred[x]] for x in pred]    
 #%%
-
+'''
 def get_show_image(d_loader = trainload, n_show = 20):
     set_row = n_show//10 if n_show%10 == 0 else n_show//10 + 1
     diter = iter(d_loader)
@@ -243,3 +255,5 @@ def get_show_image(d_loader = trainload, n_show = 20):
         ax = fig.add_subplot(set_row, 10, idx + 1, xticks = [], yticks = [])
         showimg(images[idx])
         ax.set_title(classes[label[idx]])
+DOWN HERE FOR PLOTTING LATER
+'''
