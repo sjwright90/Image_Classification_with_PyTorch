@@ -215,7 +215,7 @@ for epoch in range(6):
 print("Total time: {:.3f} minutes".format((time.time()-start_time)/60))
 #%%
 #plot training and validation epoch 
-figs, ax = plt.subplots()
+fig, ax = plt.subplots()
 ax.plot(train_epoch_loss, "-bx")
 ax.plot(val_epoch_loss, "-rx")
 ax.set_title("Training loss and validation loss")
@@ -223,6 +223,7 @@ ax.legend(["Training", "Validation"])
 ax.set_xlabel("Epoch")
 ax.set_ylabel("Loss")
 plt.show()
+fig.savefig("nnmodel_loss.png")
 #%%
 figa, axa = plt.subplots()
 axa.plot(train_accuracy)
@@ -232,6 +233,7 @@ axa.legend(["Training", "Validation"])
 axa.set_xlabel("Epoch")
 axa.set_ylabel("Accuracy")
 plt.show()
+plt.savefig("nnmodel_accuracy.png")
 #%%
 #predict on new data, just one batch, 128 images, take 3rd iteration
 i = 0
@@ -250,9 +252,10 @@ for test_idx, (feats, targets) in enumerate(testloader):
         break
 #%%
 #plot test images labeled by predicted class and actual class
-fig = plt.figure(figsize=(25,6))
+figp = plt.figure(figsize=(25,6))
 for idx in np.arange(20):
-    ax = fig.add_subplot(2, 10, idx+1, xticks = [], yticks = [])
+    ax = figp.add_subplot(2, 10, idx+1, xticks = [], yticks = [])
     showimg(imgs[idx])
     ax.set_title("Predicted: " + classes[pred[idx]] + "\nActual: " + classes[actuals[idx]])
+plt.savefig("test_images_pred_actual.png")
 #%%
