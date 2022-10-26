@@ -2,7 +2,7 @@
 
 #%%
 
-from turtle import color
+
 import torch
 import torch.nn as nn
 import torchvision
@@ -232,7 +232,7 @@ ax.axvline(x = best_epoch, color = 'k')
 ax.annotate("Lowest validation loss", xy = (best_epoch,ymax/2),\
     textcoords='offset points')
 plt.show()
-fig.savefig("nnmodel_loss.png")
+fig.savefig("./figures/nnmodel_loss.png")
 #%%
 figa, axa = plt.subplots()
 axa.plot(train_accuracy)
@@ -251,7 +251,7 @@ for e in range(n_epochs):
         textcoords="offset points")
     line_loc += epoch_brk
 plt.show()
-figa.savefig("nnmodel_accuracy.png")
+figa.savefig("./figures/nnmodel_accuracy.png")
 #%%
 #predict on new data, just one batch, 128 images, take 3rd iteration
 i = 0
@@ -275,5 +275,5 @@ for idx in np.arange(20):
     ax = figp.add_subplot(2, 10, idx+1, xticks = [], yticks = [])
     showimg(imgs[idx])
     ax.set_title("Predicted: " + classes[pred[idx]] + "\nActual: " + classes[actuals[idx]])
-figp.savefig("test_images_pred_actual.png")
+figp.savefig("./figures/test_images_pred_actual.png")
 #%%
