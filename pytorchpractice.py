@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 import torchvision.transforms as transforms
 import torch.optim as optim
-import torch.nn.functional as F
 import time
 import numpy as np
 import matplotlib.pyplot as plt
