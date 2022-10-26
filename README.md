@@ -1,5 +1,5 @@
 # PyTorch_Exploration
-Developing a neural net with PyTorch to classify images from the CIFAR10 data set
+Developing a neural net with PyTorch to classify images from the CIFAR10 data set.  
 Code is available in the pytorchpractice.py file the trained model can be accessed directly from nnmodel_cifar10.pt. 
 The model is saved following the method: ```torch.save(model.state_dict(), PATH)```  
 as described in the [PyTorch Documentation](https://pytorch.org/tutorials/beginner/saving_loading_models.html)  
