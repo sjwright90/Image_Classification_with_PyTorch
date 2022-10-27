@@ -68,8 +68,7 @@ classes = cifartrain.classes
 #%%
 #then we build the data loaders to get the data 
 #into the pytorch model
-#we will manually build a k-fold CV from the training set
-#so no just put 
+
 indxs = np.arange(len(cifartrain))
 np.random.shuffle(indxs)
 split = int(np.floor(len(cifartrain) * 0.1)) #10% set aside for validation
