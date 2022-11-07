@@ -3,7 +3,7 @@ Developing a neural net with PyTorch to classify images from the CIFAR10 data se
 Code is available in the pytorchpractice.py file the trained model can be accessed directly from nnmodel_cifar10.pt. 
 The model is saved following the method: ```torch.save(model.state_dict(), PATH)```  
 as described in the [PyTorch Documentation](https://pytorch.org/tutorials/beginner/saving_loading_models.html)  
-To load the follow the instructions provided in the PyTorch documentation.  
+To load the model, follow the instructions provided in the PyTorch documentation.  
 The best accuracy achieved on the prediction set during a single batch was 0.85, 0.75 average best over an epoch  
 Below are some general plots outlining model training, the code to produce these plots is in the main python script
 
